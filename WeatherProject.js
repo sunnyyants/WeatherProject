@@ -3,7 +3,8 @@ import React, {
   StyleSheet,
   Text,
   View,
-  TextInput
+  TextInput,
+  Image
 } from 'react-native';
 
 import Forcast from './Forcast';
@@ -12,32 +13,51 @@ var WeatherProject = React.createClass({
   getInitialState: function(){
     return {
       zip: '',
-      forcast: {
-        main: 'Clouds',
-        description:'few clouds',
-        temp: 45.7
-      }
+      forcast: null
     };
   },
   _handleTextChange: function(event){
     console.log(event.nativeEvent.text);
     this.setState({zip: event.nativeEvent.text});
+    this.getWeatherForcast(event.nativeEvent.text);
+  },
+  getWeatherForcast: function(zip){
+    fetch(`http://api/openweathermap.org/data/2.5/weather?q=${zip}&units=imperial`)
+      .then((response) => {response.json()})
+      .then((responseJson) => {
+        console.log(responseJson);
+        this.setState({
+          forcast: {
+            main: responseJson.weather[0].main,
+            description: responseJson.weather[0].description,
+            temp: responseJson.main.temps
+          }
+        })
+      })
+      .catch((error) => {
+        console.warn(error);
+      })
   },
   render: function() {
+    let content = null;
+    if (this.state.forcast != null){
+      content = <Forcast main={this.state.forcast.main} description={this.state.forcast.description} temp={this.state.forcast.temp}/>
+    }
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Your Input {this.state.zip}
-        </Text>
-        <Forcast main={this.state.forcast.main} description={this.state.forcast.description} temp={this.state.forcast.temp}/>
-        <TextInput style={styles.input} onSubmitEditing={this._handleTextChange}/>
-        <Text style={styles.instructions}>
-          To get started, edit index.ios.js
-        </Text>
-        <Text style={styles.instructions}>
-          Press Cmd+R to reload,{'\n'}
-          Cmd+D or shake for dev menu
-        </Text>
+        <Image source={require('./img/Dark-Polygon-iphone-6-background.jpg')} resizeMode='cover' style={styles.backdrop}>
+          <View style={styles.overlay}>
+            <View style={styles.row}>
+              <Text style={styles.mainText}>
+                Current Weather for
+              </Text>
+              <View style={styles.zipContainer}>
+                <TextInput style={[styles.zipCode, styles.mainText]} returnKeyType='go' onSubmitEditing={this._handleTextChange}/>
+              </View>
+            </View>
+            {content}
+          </View>
+        </Image>
       </View>
     );
   }
@@ -46,24 +66,42 @@ var WeatherProject = React.createClass({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#4d4d4d',
+    paddingTop: 30
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
+  overlay:{
+    paddingTop: 5,
+    backgroundColor:'#000000',
+    opacity:0.5,
+    flexDirection:'column',
+    alignItems: 'center'
   },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
+  row:{
+    flex:1,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    alignItems:'flex-start',
+    padding: 30
   },
-  input: {
-    fontSize: 20,
-    borderWidth: 2,
-    height: 40
+  zipContainer:{
+    flex:1,
+    borderBottomColor:"#dddddd",
+    borderBottomWidth:1,
+    marginLeft: 5,
+    marginTop: 3
+  },
+  zipCode:{
+    width: 50,
+    height: 16
+  },
+  mainText:{
+    flex:1,
+    fontSize: 16,
+    color: "#FFFFFF"
+  },
+  backdrop: {
+    flex: 1,
+    flexDirection: 'column'
   }
 });
 
